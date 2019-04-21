@@ -1,0 +1,11 @@
+---
+title: "P8106 HW 4"
+author: "Nathalie Fadel"
+date: "4/21/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
