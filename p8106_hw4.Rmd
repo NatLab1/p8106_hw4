@@ -33,9 +33,106 @@ data(Prostate)
 
 set.seed(1)
 tree1 <- rpart(lpsa~., Prostate, 
-               control = rpart.control(cp = 0.1))
+               control = rpart.control(cp = 0.001))
 rpart.plot(tree1)
 
+cpTable <- printcp(tree1)
+plotcp(tree1)
+minErr <- which.min(cpTable[,4])
+minErr
+
+cpTable[cpTable[,4] < cpTable[minErr,4] + cpTable[minErr,5], 2][1] + 1 
 
 ```
+Using the cv method the optimal tree size is 8. Using the 1 SE rule, the optimal tree size is 4.
+
+###Part B
+```{r}
+tree2 <- prune(tree1, cp = cpTable[cpTable[,4] < cpTable[minErr,4] + cpTable[minErr,5], 1][1])
+rpart.plot(tree2)
+
+```
+From the tree we can see that in the terminal node where lcavol is not < 2.5, 22% of the values lie in this range. The mean lpsa for values greater than 2.5 is 3.8.
+
+###Part C
+```{r}
+ctrl <- trainControl(method = "cv")
+
+bag.grid <- expand.grid(mtry = 8,
+                       splitrule = "variance",
+                       min.node.size = 1:20)
+
+set.seed(1)
+bag.fit <- train(lpsa~., Prostate, 
+                method = "ranger",
+                tuneGrid = bag.grid,
+                trControl = ctrl,
+                importance = 'permutation')
+
+ggplot(bag.fit, highlight = TRUE)
+
+bag.fit$results[which.min(bag.fit$results[,5]),]
+
+barplot(sort(ranger::importance(bag.fit$finalModel), decreasing = FALSE), 
+        las = 2, horiz = TRUE, cex.names = 0.7,
+        col = colorRampPalette(colors = c("darkred","white","darkblue"))(19))
+
+```
+  
+The imporance of variables from highest to lowest is: lcavol, lweight, svi, pgg45, gleason, lbph, lcp, and age.
+  
+###Part D
+```{r}
+rf.grid <- expand.grid(mtry = 1:7,
+                       splitrule = "variance",
+                       min.node.size = 1:15)
+
+set.seed(1)
+rf.fit <- train(lpsa~., Prostate, 
+                method = "ranger",
+                tuneGrid = rf.grid,
+                trControl = ctrl,
+                importance = 'permutation')
+
+ggplot(rf.fit, highlight = TRUE)
+
+rf.fit$results[which.min(rf.fit$results[,5]),]
+
+barplot(sort(ranger::importance(rf.fit$finalModel), decreasing = FALSE), 
+        las = 2, horiz = TRUE, cex.names = 0.7,
+        col = colorRampPalette(colors = c("darkred","white","darkblue"))(19))
+
+```
+
+The variables order of importance from highest to lowest using the random forest method is lcavol, svi, lweight, pgg45, lcp, gleason, lbph, and age. Using this method, svi is of greater importance than lweight, which is the opposite of we saw in the bagging method.
+
+###Part E
+```{r}
+gbm.grid <- expand.grid(n.trees = c(2000,3000),
+                        interaction.depth = 2:10,
+                        shrinkage = c(0.001,0.003,0.005),
+                        n.minobsinnode = 1)
+set.seed(1)
+gbm.fit <- train(lpsa~., Prostate, 
+                 method = "gbm",
+                 tuneGrid = gbm.grid,
+                 trControl = ctrl,
+                 verbose = FALSE)
+
+ggplot(gbm.fit, highlight = TRUE)
+
+summary(gbm.fit$finalModel, las = 2, cBars = 19, cex.names = 0.6)
+
+```
+The variables order of importance from highest to lowest using the GBM method is lcavol, lweight, svi, pgg45, lcp, age, lbph, and gleason.
+
+###Part F
+```{r}
+re.sample = resamples(list(rf = rf.fit, gbm = gbm.fit, bagging = bag.fit))
+summary(re.sample)
+
+#GBM r-sq 0.6395, RMSE 0.7469.
+```
+Based on both the mean r-squared and RMSE comparisons, I am going to choose the GBM method, as it maximizes R-squared and minimizes RMSE out of the three methods tested.
+
 
