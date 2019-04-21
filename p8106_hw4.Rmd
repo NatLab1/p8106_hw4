@@ -128,11 +128,41 @@ The variables order of importance from highest to lowest using the GBM method is
 
 ###Part F
 ```{r}
-re.sample = resamples(list(rf = rf.fit, gbm = gbm.fit, bagging = bag.fit))
+re.sample = resamples(list(bagging = bag.fit, rf = rf.fit, gbm = gbm.fit))
 summary(re.sample)
 
 #GBM r-sq 0.6395, RMSE 0.7469.
 ```
 Based on both the mean r-squared and RMSE comparisons, I am going to choose the GBM method, as it maximizes R-squared and minimizes RMSE out of the three methods tested.
+
+
+##Problem 2
+
+###Part A
+```{r}
+data("OJ")
+
+set.seed(1)
+ctrl <- trainControl(method = "repeatedcv")
+
+rowTrain = createDataPartition(y = OJ$Purchase, p = 0.747, list = FALSE)
+
+rpart.fit <- train(Purchase~., OJ, 
+                   subset = rowTrain,
+                   method = "rpart",
+                   tuneGrid = data.frame(cp = exp(seq(-6,-3, len = 20))),
+                   trControl = ctrl,
+                   metric = "Accuracy")
+
+ggplot(rpart.fit, highlight = TRUE)
+
+rpart.plot(rpart.fit$finalModel)
+
+rpart.pred <- predict(rpart.fit, newdata = OJ[-rowTrain,])
+error.rate <- mean(rpart.pred != OJ$Purchase[-rowTrain])
+
+error.rate
+#The test classification error rate is 18.5%
+```
 
 
