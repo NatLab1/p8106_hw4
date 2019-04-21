@@ -9,3 +9,33 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r, echo = T, message = FALSE, results = 'hide', warning = FALSE}
+library(lasso2)
+library(ISLR)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(party)
+library(partykit)
+library(randomForest)
+library(ranger)
+library(gbm)
+library(plotmo)
+library(pdp)
+library(lime)
+```
+
+##Problem 1
+
+###Part A
+```{r}
+data(Prostate)
+
+set.seed(1)
+tree1 <- rpart(lpsa~., Prostate, 
+               control = rpart.control(cp = 0.1))
+rpart.plot(tree1)
+
+
+```
+
