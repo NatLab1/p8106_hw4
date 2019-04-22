@@ -162,7 +162,57 @@ rpart.pred <- predict(rpart.fit, newdata = OJ[-rowTrain,])
 error.rate <- mean(rpart.pred != OJ$Purchase[-rowTrain])
 
 error.rate
-#The test classification error rate is 18.5%
+
 ```
+The error rate is 18.5%
+
+###Part B
+```{r}
+rf.grid <- expand.grid(mtry = 1:10,
+                       splitrule = "gini",
+                       min.node.size = 1:6)
+set.seed(1)
+rf.fit <- train(Purchase~., OJ, 
+                subset = rowTrain,
+                method = "ranger",
+                tuneGrid = rf.grid,
+                metric = "Accuracy",
+                trControl = ctrl,
+                importance = "permutation")
+
+ggplot(rf.fit, highlight = TRUE)
+
+rf.pred <- predict(rf.fit, newdata = OJ[-rowTrain,])
+error.rate <- mean(rf.pred != OJ$Purchase[-rowTrain])
+error.rate
 
 
+```
+The error rate is 19.3%.
+
+###Part C
+```{r}
+boost.grid <- expand.grid(n.trees = c(2000,3000,4000),
+                        interaction.depth = 1:6,
+                        shrinkage = c(0.001,0.003,0.005),
+                        n.minobsinnode = 1)
+
+set.seed(1)
+boost.fit <- train(Purchase~., OJ, 
+                 subset = rowTrain, 
+                 tuneGrid = boost.grid,
+                 trControl = ctrl,
+                 method = "gbm",
+                 distribution = "adaboost",
+                 metric = "Accuracy",
+                 verbose = FALSE)
+
+ggplot(boost.fit, highlight = TRUE)
+
+boost.pred <- predict(boost.fit, newdata = OJ[-rowTrain,])
+error.rateb <- mean(boost.pred != OJ$Purchase[-rowTrain])
+error.rateb
+
+
+```
+The error rate is 15.5%.
